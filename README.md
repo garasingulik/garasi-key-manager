@@ -42,25 +42,6 @@ The key database (stored by default in a file named keys.db in the same director
 The command-line option --db <filename> can be used to specify an alternate location to store the database file.
 Consult the SQLite documentation for details on how to manage the database file (backups, etc.)
 
-### Configuration with Command-line arguments
-The server can be configured through command-line arguments. Launching the server with the `-h` command-line argument will print out a list of supported command line arguments and options:
-
-```
-  Usage: keystore.js [options]
-
-  Options:
-
-    -h, --help                          output usage information
-    -V, --version                       output the version number
-    -p, --port [port]                   Listen on port number [port] (default 8000)
-    -l, --log-level [log-level]         Logging level (between 0 and 10, default=1)
-    -o, --log-output [log-output-file]  Log output file name (default=stdout)
-    -r, --root [url-root]               Root URL path at which the API is exposed (default=/)
-    -b, --db [module:params]            Database configuration (default=sqlite3:keys.db)
-    -d, --debug                         Debug mode
-```
-
-
 Support
 -------
 
