@@ -1,6 +1,6 @@
-const crypto = require('crypto')
+import crypto from 'crypto'
 
-const wrapKey = function (key, kek) {
+const wrapKey = (key: string | Buffer, kek: string | Buffer): Buffer | undefined => {
   if (typeof key === 'string') {
     key = Buffer.from(key, 'hex')
   }
@@ -15,7 +15,7 @@ const wrapKey = function (key, kek) {
   // Inputs:      Plaintext, n 64-bit values {P1, P2, ..., Pn}, and
   // Key, K (the KEK).
   // Outputs:     Ciphertext, (n+1) 64-bit values {C0, C1, ..., Cn}.
-  let n = key.length / 8
+  const n = key.length / 8
   if (n < 1) return
 
   // 1) Initialize variables.
@@ -23,8 +23,8 @@ const wrapKey = function (key, kek) {
   //    Set A = IV, an initial value (see 2.2.3)
   //      For i = 1 to n
   //      R[i] = P[i]
-  let A = Buffer.from('A6A6A6A6A6A6A6A6', 'hex')
-  let R = [A]
+  const A = Buffer.from('A6A6A6A6A6A6A6A6', 'hex')
+  const R = [A]
   for (let i = 1; i <= n; i++) {
     R[i] = Buffer.alloc(8)
     key.copy(R[i], 0, (i - 1) * 8, i * 8)
@@ -39,9 +39,10 @@ const wrapKey = function (key, kek) {
   //        R[i] = LSB(64, B)
   for (let j = 0; j <= 5; j++) {
     for (let i = 1; i <= n; i++) {
-      let block = Buffer.concat([A, R[i]])
-      let B = cipher.update(block)
+      const block = Buffer.concat([A, R[i]])
+      const B = cipher.update(block)
       B.copy(A, 0, 0, 8)
+      // tslint:disable-next-line: no-bitwise
       A[7] ^= (n * j) + i
       B.copy(R[i], 0, 8, 16)
     }
@@ -55,7 +56,7 @@ const wrapKey = function (key, kek) {
   return Buffer.concat(R)
 }
 
-const unwrapKey = function (key, kek) {
+const unwrapKey = (key: string | Buffer, kek: string | Buffer): Buffer | undefined => {
   if (typeof key === 'string') {
     key = Buffer.from(key, 'hex')
   }
@@ -71,7 +72,7 @@ const unwrapKey = function (key, kek) {
   // Inputs:  Ciphertext, (n+1) 64-bit values {C0, C1, ..., Cn}, and
   // Key, K (the KEK).
   // Outputs: Plaintext, n 64-bit values {P0, P1, K, Pn}.
-  let n = key.length / 8 - 1
+  const n = key.length / 8 - 1
   if (n < 1) return
 
   // 1) Initialize variables.
@@ -79,9 +80,9 @@ const unwrapKey = function (key, kek) {
   //    Set A = C[0]
   //    For i = 1 to n
   //      R[i] = C[i]
-  let A = Buffer.alloc(8)
+  const A = Buffer.alloc(8)
   key.copy(A, 0, 0, 8)
-  let R = [Buffer.alloc(0)]
+  const R = [Buffer.alloc(0)]
   for (let i = 1; i <= n; i++) {
     R[i] = Buffer.alloc(8)
     key.copy(R[i], 0, i * 8, (i + 1) * 8)
@@ -96,9 +97,10 @@ const unwrapKey = function (key, kek) {
   //       R[i] = LSB(64, B)
   for (let j = 5; j >= 0; j--) {
     for (let i = n; i >= 1; i--) {
+      // tslint:disable-next-line: no-bitwise
       A[7] ^= (n * j) + i
-      let block = Buffer.concat([A, R[i]])
-      let B = decipher.update(block)
+      const block = Buffer.concat([A, R[i]])
+      const B = decipher.update(block)
       B.copy(A, 0, 0, 8)
       B.copy(R[i], 0, 8, 16)
     }
@@ -122,7 +124,7 @@ const unwrapKey = function (key, kek) {
   return Buffer.concat(R)
 }
 
-module.exports = {
-  wrapKey,
-  unwrapKey
+export default {
+  unwrapKey,
+  wrapKey
 }

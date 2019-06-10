@@ -1,7 +1,8 @@
-const config = require('config')
-const sqlite = require('./sqlite')
+import config from '../../config'
+import sqlite from './sqlite'
 
 // You can add implementation for database here
+// tslint:disable-next-line: no-console
 console.log(`Using "${config.db.type}" as database backend ...`)
 
 function getDB () {
@@ -9,8 +10,10 @@ function getDB () {
     case 'sqlite':
       return sqlite
     default:
-      return null
+      return sqlite
   }
 }
 
-module.exports = getDB()
+const db = getDB()
+
+export default db
