@@ -1,6 +1,8 @@
-function register (app) {
+import express from 'express'
+
+const register = (app: express.Express): void => {
   app.get('/', (req, res) => {
-    let data = {
+    const data = {
       status: 'Server is running ...',
       time: new Date()
     }
@@ -8,6 +10,6 @@ function register (app) {
   })
 }
 
-module.exports = {
+export default {
   register
 }

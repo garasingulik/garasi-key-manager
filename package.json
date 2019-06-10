@@ -13,17 +13,29 @@
     "async": "^3.0.1",
     "body-parser": "^1.19.0",
     "commander": "^2.20.0",
-    "config": "^3.1.0",
     "errorhandler": "^1.5.1",
     "express": "^4.17.1",
     "morgan": "^1.9.1",
     "send": "^0.17.1",
     "sqlite3": "^4.0.8"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/config": "0.0.34",
+    "@types/errorhandler": "0.0.32",
+    "@types/express": "^4.17.0",
+    "@types/morgan": "^1.7.35",
+    "@types/sqlite3": "^3.1.5",
+    "@typescript-eslint/eslint-plugin": "^1.10.2",
+    "@typescript-eslint/parser": "^1.10.2",
+    "tslint": "^5.17.0",
+    "tslint-config-standard": "^8.0.1",
+    "typescript": "^3.5.1"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node dist/index.js",
+    "prestart": "tsc -p .",
+    "watch": "tsc -w"
   },
   "repository": {
     "type": "git",
@@ -47,5 +59,11 @@
   "bugs": {
     "url": "https://github.com/garasingulik/garasi-key-manager/issues"
   },
-  "homepage": "https://github.com/garasingulik/garasi-key-manager#readme"
+  "homepage": "https://github.com/garasingulik/garasi-key-manager#readme",
+  "standard": {
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint/eslint-plugin"
+    ]
+  }
 }

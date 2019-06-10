@@ -1,22 +1,25 @@
-const express = require('express')
-const bodyParser = require('body-parser')
-const errorHandler = require('errorhandler')
-const logger = require('morgan')
-const https = require('https')
-const fs = require('fs')
+import errorHandler from 'errorhandler'
+import express from 'express'
+import logger from 'morgan'
+
+import * as bodyParser from 'body-parser'
+import * as fs from 'fs'
+import * as https from 'https'
+
+import routes from './routes'
 
 // server init
 const port = process.env.PORT || 8000
 process.env.NODE_ENV = process.env.NODE_ENV || 'development'
 
-let app = express()
+const app = express()
 
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(logger('dev'))
 
 // registering routes
-require('./routes').register(app)
+routes.register(app)
 
 // error handling middleware should be loaded after the loading the routes
 if (app.get('env') === 'development') {

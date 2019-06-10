@@ -1,24 +1,27 @@
-const db = require('../lib/db')
-const validator = require('../lib/validator')
-const helper = require('../lib/helper')
-const keywrap = require('../lib/keywrap')
+import express from 'express'
 
-const { wrapPromise } = require('../lib/utilities')
+import db from '../lib/db'
+import helper from '../lib/helper'
+import keywrap from '../lib/keywrap'
+import validator from '../lib/validator'
 
-function register (app) {
+import * as T from '../lib/types'
+import * as U from '../lib/utilities'
+
+export function register (app: express.Express): void {
   app.get('/keys', async (req, res) => {
     if (!validator.checkParameters(req.query)) {
       res.status(400).send({ message: 'Invalid Parameters' })
       return
     }
 
-    let kek = req.query.kek
+    const kek = req.query.kek
+    const keys = await U.wrapPromise(db.getKeys([], kek))
 
-    let [err, keys] = await wrapPromise(db.getKeys(null, kek))
-
-    if (err) {
-      console.log(err)
-      res.status(500).json(err)
+    if (U.isError(keys)) {
+      // tslint:disable-next-line: no-console
+      console.log(keys)
+      res.status(500).json(keys)
       return
     }
 
@@ -26,8 +29,8 @@ function register (app) {
   })
 
   app.get('/keys/count', async (req, res) => {
-    let [err, result] = await wrapPromise(db.getKeyCount())
-    if (err) {
+    const result = await U.wrapPromise<number>(db.getKeyCount())
+    if (U.isError(result)) {
       res.status(500).send({ message: 'Internal Server Error' })
       return
     }
@@ -35,16 +38,16 @@ function register (app) {
   })
 
   app.get('/keys/:keyIds', async (req, res) => {
-    let kids = req.params['keyIds']
-    let kidSelector = kids.split(',')
+    const kids = req.params.keyIds
+    const kidSelector = kids.split(',')
 
     if (!kids || !kidSelector) {
       res.status(400).send({ message: 'Bad Request' })
       return
     }
 
-    for (var i = 0; i < kidSelector.length; i++) {
-      var kid = helper.kidFromString(kidSelector[i])
+    for (let i = 0; i < kidSelector.length; i++) {
+      const kid = helper.kidFromString(kidSelector[i])
       if (!validator.checkKid(kid)) {
         res.status(400).send({ message: 'Invalid KID' })
         return
@@ -58,28 +61,28 @@ function register (app) {
       return
     }
 
-    let kek = req.query.kek
-
-    let [err, keys] = await wrapPromise(db.getKeys(kidSelector, kek))
-    if (err) {
-      console.log(err)
-      res.status(500).json(err)
+    const kek = req.query.kek
+    const keys = await U.wrapPromise<T.Key[]>(db.getKeys(kidSelector, kek))
+    if (U.isError(keys)) {
+      // tslint:disable-next-line: no-console
+      console.log(keys)
+      res.status(500).json(keys)
+      return
     }
 
     if (keys && keys.length > 0) {
       if (kek) {
-        for (let i = 0; i < keys.length; i++) {
-          var key = keys[i]
-          var unwrapped = keywrap.unwrapKey(key.ek, kek)
+        keys.forEach((k) => {
+          const unwrapped = keywrap.unwrapKey(k.ek, kek)
           if (unwrapped) {
-            key.k = unwrapped.toString('hex')
+            k.k = unwrapped.toString('hex')
           } else {
             res.status(400).send({ message: 'Incorrect KEK' })
             return
           }
-          delete key.ek
-          delete key.kekId
-        }
+          delete k.ek
+          delete k.kekId
+        })
       }
       res.status(200).json(keys.length === 1 ? keys[0] : keys)
     } else {
@@ -104,7 +107,7 @@ function register (app) {
       return
     }
 
-    let kek = req.query.kek
+    const kek = req.query.kek
     if (!kek) {
       // no kek was passed, check that an encrypted key was supplied
       if (!key.ek) {
@@ -113,13 +116,13 @@ function register (app) {
       }
     }
 
-    let [err, result] = await wrapPromise(db.createNewKey(kek, key))
-    if (err) {
+    const newKey = await U.wrapPromise<T.KeyDetail>(helper.createNewKey(kek, key))
+    if (U.isError(newKey)) {
       res.status(400).send({ message: 'Bad Request' })
       return
     }
 
-    res.status(200).json(result)
+    res.status(200).json(newKey)
   })
 
   app.put('/keys/:keyId', async (req, res) => {
@@ -139,50 +142,51 @@ function register (app) {
       return
     }
 
-    let kid = req.params['keyId']
+    const kid = req.params.keyId
 
     if (!validator.checkKid(kid) || !validator.checkKey(key)) {
       res.status(400).send({ message: 'Invalid Parameters' })
       return
     }
 
-    let kek = req.query.kek
+    const kek = req.query.kek
 
     if (key.k && !key.ek) {
       if (!kek) {
         res.status(400).send({ message: 'KEK Required' })
         return
       }
-      key.ek = keywrap.wrapKey(key.k, kek).toString('hex')
-      if (!key.ek) {
+      const ek = keywrap.wrapKey(key.k, kek)
+      if (!ek) {
         res.status(500).send({ message: 'Internal Server Error' })
         return
       }
+      key.ek = ek.toString('hex')
     }
 
-    let [err, result] = await wrapPromise(db.putKey(kid, key))
-    if (err) {
-      if (err.message === 'Not Found') {
-        res.status(404).send(err.message)
+    const keyDetail = await U.wrapPromise<T.KeyDetail>(db.putKey(kid, key))
+    if (U.isError(keyDetail)) {
+      if (keyDetail.message === 'Not Found') {
+        res.status(404).send(keyDetail.message)
       } else {
         res.status(500).send({ message: 'Internal Server Error' })
       }
     }
 
-    res.status(200).json(result)
+    res.status(200).json(keyDetail)
   })
 
   app.delete('/keys/:keyIds', async (req, res) => {
-    let kids = req.params['keyIds']
-    let kidSelector = kids.split(',')
+    const kids = req.params.keyIds
+    const kidSelector = kids.split(',')
 
     if (!kids || !kidSelector) {
       res.status(400).send({ message: 'Bad Request' })
       return
     }
 
-    for (var i = 0; i < kidSelector.length; i++) {
-      var kid = helper.kidFromString(kidSelector[i])
+    for (let i = 0; i < kidSelector.length; i++) {
+      const kid = helper.kidFromString(kidSelector[i])
       if (!validator.checkKid(kid)) {
         res.status(400).send({ message: 'Invalid KID' })
         return
@@ -196,8 +200,8 @@ function register (app) {
       return
     }
 
-    let [err, result] = await wrapPromise(db.deleteKeys(kids))
-    if (err) {
+    const result = await U.wrapPromise<void>(db.deleteKeys(kids))
+    if (result) {
       res.status(500).send({ message: 'Internal Server Error' })
       return
     }
@@ -206,6 +210,6 @@ function register (app) {
   })
 }
 
-module.exports = {
+export default {
   register
 }

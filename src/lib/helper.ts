@@ -1,20 +1,21 @@
-const crypto = require('crypto')
+import crypto from 'crypto'
 
-const keywrap = require('./keywrap')
-const db = require('./db')
+import db from './db'
+import keywrap from './keywrap'
 
-const { wrapPromise } = require('./utilities')
+import * as T from './types'
+import * as U from './utilities'
 
 const KEKID_CONSTANT_1 = 'KEKID_1'
 
-function computeKekId (kek) {
-  var hash = crypto.createHash('sha1')
+function computeKekId (kek: string): string {
+  const hash = crypto.createHash('sha1')
   hash.update(KEKID_CONSTANT_1, 'ascii')
   hash.update(kek, 'ascii')
   return '#1.' + hash.digest('hex').substring(0, 32)
 }
 
-function kidFromString (kid) {
+function kidFromString (kid: string): string {
   if (kid.indexOf('^') === 0) {
     // derive the KID using a hash
     const hash = crypto.createHash('sha1')
@@ -25,9 +26,9 @@ function kidFromString (kid) {
   return kid
 }
 
-function randomize (key) {
+function randomize (key: T.KeyDetail): Promise<T.KeyDetail> {
   return new Promise((resolve, reject) => {
-    crypto.randomBytes(32, function (err, random) {
+    crypto.randomBytes(32, (err, random) => {
       if (err) {
         return reject(err)
       }
@@ -42,36 +43,37 @@ function randomize (key) {
   })
 }
 
-function createNewKey (kek, key) {
+function createNewKey (kek: string, key: T.KeyDetail): Promise<T.KeyDetail> {
   return new Promise(async (resolve, reject) => {
     let theKey = key
     if (!key.kid || (!key.ek && !key.k)) {
       // we need some random values
-      let [err, rand] = await wrapPromise(randomize(key))
-      if (err) {
-        return reject(err)
+      const random = await U.wrapPromise<T.KeyDetail>(randomize(key))
+      if (U.isError(random)) {
+        return reject(random)
       }
-      theKey = rand
+      theKey = random
     }
-    let [err, result] = await wrapPromise(storeNewKey(kek, theKey))
-    if (err) {
-      return reject(err)
+    const newKey = await U.wrapPromise<T.KeyDetail>(storeNewKey(kek, theKey))
+    if (U.isError(newKey)) {
+      return reject(newKey)
     }
 
-    return resolve(result)
+    return resolve(newKey)
   })
 }
 
-function storeNewKey (kek, key) {
+function storeNewKey (kek: string, key: T.KeyDetail): Promise<T.KeyDetail> {
   return new Promise(async (resolve, reject) => {
     key.kid = kidFromString(key.kid)
     if (!key.ek) {
-      key.ek = keywrap.wrapKey(key.k, kek).toString('hex')
-      if (!key.ek) {
+      const ek = keywrap.wrapKey(key.k, kek)
+      if (!ek) {
         return reject(new Error('Invalid Key Format'))
       }
+      key.ek = ek.toString('hex')
     }
-    if (key.kekId === undefined) {
+    if (key.kekId === '') {
       if (kek) {
         // compute the KEK ID from the kek itself
         key.kekId = computeKekId(kek)
@@ -80,15 +82,15 @@ function storeNewKey (kek, key) {
         key.kekId = ''
       }
     }
-    let [err] = await wrapPromise(db.createKey(key))
-    if (err) {
-      return reject(err)
+    const result = await U.wrapPromise(db.createKey(key))
+    if (U.isError(result)) {
+      return reject(result)
     }
     return resolve(key)
   })
 }
 
-module.exports = {
-  kidFromString,
-  createNewKey
+export default {
+  createNewKey,
+  kidFromString
 }
