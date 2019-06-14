@@ -17,7 +17,7 @@
     "express": "^4.17.1",
     "morgan": "^1.9.1",
     "send": "^0.17.1",
-    "sqlite3": "^4.0.8"
+    "sqlite3": "^4.0.9"
   },
   "devDependencies": {
     "@types/config": "0.0.34",
