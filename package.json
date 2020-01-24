@@ -28,7 +28,7 @@
     "@typescript-eslint/eslint-plugin": "^1.13.0",
     "@typescript-eslint/parser": "^1.13.0",
     "tslint": "^5.20.1",
-    "tslint-config-standard": "^8.0.1",
+    "tslint-config-standard": "^9.0.0",
     "typescript": "^3.7.5"
   },
   "scripts": {
