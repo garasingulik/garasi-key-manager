@@ -29,7 +29,7 @@
     "@typescript-eslint/parser": "^1.13.0",
     "tslint": "^5.20.1",
     "tslint-config-standard": "^9.0.0",
-    "typescript": "^3.9.7"
+    "typescript": "^3.9.8"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
